@@ -6,20 +6,17 @@ A Lua plugin for Reaper DAW that provides automatic project versioning with full
 ## Features (v0.1)
 
 - **Dockable UI** - Native Reaper interface
-- **Auto-versioning** - Create versioned copies with one click
-- **Full project copy** - All media files copied to new version folder
-- **Cross-platform** - Works on Linux (Debian), Windows, and macOS
+- **Auto-versioning** - Open save as dialog
+- **Cross-platform** - Works on Linux (Debian) and Windows
 
 ## Requirements
 
 ### Required
 - **Reaper DAW** v6.0 or newer (tested with v7.x)
-- **Operating System**: Windows, macOS, or Linux (Debian)
+- **Operating System**: Linux (Debian) or Windows 11 (tested)
 
 ### Recommended
-- **SWS Extension** - Enables automatic configuration of Reaper settings
-  - Download: https://www.sws-extension.org/
-  - Without SWS, RASP can detect misconfigured settings but cannot fix them automatically
+No extensions or additonal needed.
 
 ## Project Structure
 
@@ -61,22 +58,18 @@ MyProject_v002/MyProject_v002.rpp  → Version 2
 - ability to "auto version" from RASP UI
 - increase version number when versioning
 
-Version 0.2 goals
+### Version 0.2 goals
 - make archiving action of projects to local drive
 - UI for archiving 
+- Select how many versions are kept and rest are achived
 
-Version 0.3 goals
+### Version 0.3 goals
+- Make archiving action of projects to Backblaze B2
+- Able to pull back project from archive from Backblaze B2
+
+### Version 0.3 goals
 
 - find all repaer projects (from REPER media folder)
-    - Able to choose what projects will be archived 
+    - Able to choose what projects will be archived and how many versions are kept
     - Configuration option for singe "Reaper media" folder
     
-Version 0.4 goals
-- Make archiving action of projects to ?
-- Able to pull back project from archive 
-
-Archive options:
-- Backblaze
-- Amazon S3
-- Azure file
-- Storj
