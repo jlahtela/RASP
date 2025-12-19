@@ -32,6 +32,7 @@ local config = require("config")
 local gui = require("gui")
 local versioning = require("versioning")
 local file_ops = require("file_operations")
+local archiving = require("archiving")
 
 -- Initialize configuration
 config.init()
@@ -52,6 +53,34 @@ local function main()
       gui.update_project_info()
     else
       gui.set_status("Error: " .. result)
+    end
+  end
+  
+  -- Handle archive browsing
+  if gui.should_browse_archive_dest then
+    gui.should_browse_archive_dest = false
+    
+    local retval, selected_path = reaper.GetUserInputs("Archive Destination", 1, "Folder path:", config.get("archive_destination"))
+    if retval and selected_path ~= "" then
+      config.set("archive_destination", selected_path)
+      gui.update_project_info()
+      gui.set_status("Archive destination updated")
+    end
+  end
+  
+  -- Handle archiving
+  if gui.should_archive_now then
+    gui.should_archive_now = false
+    gui.set_status("Archiving old versions...")
+    
+    local archive_dest = config.get("archive_destination")
+    local versions_to_keep = config.get("versions_to_keep")
+    
+    local success, result = archiving.archive_versions(archive_dest, versions_to_keep)
+    if success then
+      gui.set_status(result)
+    else
+      gui.set_status("Error: " .. result, true)
     end
   end
   

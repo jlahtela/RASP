@@ -44,6 +44,15 @@ local state = {
   -- Button states
   version_button_hover = false,
   
+  -- Archiving settings
+  archive_destination = "",
+  versions_to_keep = 3,
+  
+  -- Input field state
+  input_active = false,
+  input_text = "",
+  input_cursor = 0,
+  
   -- Fonts
   font_normal = 1,
   font_large = 2,
@@ -52,6 +61,8 @@ local state = {
 
 -- Public flags
 gui.should_create_version = false
+gui.should_archive_now = false
+gui.should_browse_archive_dest = false
 
 -- Set status message
 function gui.set_status(text, is_error)
@@ -72,6 +83,12 @@ function gui.update_project_info()
   else
     state.project_path = ""
   end
+  
+  -- Load archiving settings
+  local config = require("config")
+  state.archive_destination = config.get("archive_destination")
+  state.versions_to_keep = config.get("versions_to_keep")
+  state.input_text = tostring(state.versions_to_keep)
 end
 
 -- Helper: Set drawing color
@@ -132,6 +149,31 @@ local function draw_button(text, x, y, w, h, enabled)
   draw_text_centered(text, x, y, w, h, text_color)
   
   -- Return click state (only on mouse release)
+  if hover and gfx.mouse_cap == 0 and gui._last_mouse_cap == 1 then
+    return true
+  end
+  
+  return false
+end
+
+-- Helper: Draw input field for numbers
+local function draw_input_field(value, x, y, w, h)
+  local hover = mouse_in(x, y, w, h)
+  
+  -- Draw background
+  local bg_color = hover and colors.panel or colors.background
+  draw_rect(x, y, w, h, bg_color)
+  draw_border(x, y, w, h, colors.border)
+  
+  -- Draw value
+  set_color(colors.text)
+  gfx.setfont(state.font_normal)
+  local text_w, text_h = gfx.measurestr(tostring(value))
+  gfx.x = x + (w - text_w) / 2
+  gfx.y = y + (h - text_h) / 2
+  gfx.drawstr(tostring(value))
+  
+  -- Return true if clicked (for editing)
   if hover and gfx.mouse_cap == 0 and gui._last_mouse_cap == 1 then
     return true
   end
@@ -232,17 +274,63 @@ local function draw_status_bar(x, y, w)
   return h
 end
 
--- Draw future features placeholder
-local function draw_future_section(x, y, w)
-  local h = 50
+-- Draw archiving section
+local function draw_archiving_section(x, y, w)
+  local h = 180
   local padding = 15
+  local btn_w = w - padding * 2
+  local btn_h = 36
+  local small_btn_w = 100
   
   -- Section divider
   set_color(colors.border)
   gfx.line(x + 10, y, x + w - 10, y)
   
-  -- Coming soon text
-  draw_text("Archiving features coming in v0.2+", x + padding, y + 15, colors.text_dim, state.font_small)
+  -- Section title
+  draw_text("Archiving", x + padding, y + 10, colors.text_dim, state.font_small)
+  
+  -- Versions to keep
+  draw_text("Versions to keep active:", x + padding, y + 35, colors.text, state.font_small)
+  
+  -- Input field for versions to keep (compact)
+  local input_x = x + padding + 160
+  local input_w = 50
+  if draw_input_field(state.versions_to_keep, input_x, y + 30, input_w, 24) then
+    -- Show input dialog
+    local retval, new_value = reaper.GetUserInputs("Versions to Keep", 1, "Number of versions to keep active:", tostring(state.versions_to_keep))
+    if retval then
+      local num = tonumber(new_value)
+      if num and num >= 1 then
+        state.versions_to_keep = math.floor(num)
+        local config = require("config")
+        config.set("versions_to_keep", state.versions_to_keep)
+      end
+    end
+  end
+  
+  -- Archive destination
+  draw_text("Archive destination:", x + padding, y + 65, colors.text, state.font_small)
+  
+  -- Display current destination (truncated)
+  local dest_display = state.archive_destination
+  if dest_display == "" then
+    dest_display = "Not set"
+  elseif #dest_display > 30 then
+    dest_display = "..." .. dest_display:sub(-27)
+  end
+  draw_text(dest_display, x + padding, y + 82, colors.text_dim, state.font_small)
+  
+  -- Browse button
+  if draw_button("Browse...", x + padding, y + 100, small_btn_w, 28) then
+    gui.should_browse_archive_dest = true
+  end
+  
+  -- Archive now button
+  local has_project = state.project_name ~= "" and state.project_name ~= "No project loaded"
+  local has_dest = state.archive_destination ~= ""
+  if draw_button("Archive Now", x + padding, y + 138, btn_w, btn_h, has_project and has_dest) then
+    gui.should_archive_now = true
+  end
   
   return h
 end
@@ -305,7 +393,7 @@ function gui.update()
   y_offset = y_offset + draw_header(0, y_offset, w)
   y_offset = y_offset + draw_project_info(0, y_offset, w)
   y_offset = y_offset + draw_versioning_section(0, y_offset, w)
-  y_offset = y_offset + draw_future_section(0, y_offset, w)
+  y_offset = y_offset + draw_archiving_section(0, y_offset, w)
   
   -- Status bar at bottom
   draw_status_bar(0, h - 25, w)
