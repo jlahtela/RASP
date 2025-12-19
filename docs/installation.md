@@ -2,8 +2,27 @@
 
 ## Requirements
 
+### Required
 - **Reaper DAW** v6.0 or newer (tested with v7.x)
 - **Operating System**: Linux (Debian), Windows, or macOS
+
+### Recommended: SWS Extension
+
+The **SWS Extension** adds powerful features to Reaper and enables RASP to automatically configure settings.
+
+**Benefits with SWS installed:**
+- RASP can automatically enable "Copy imported media to project media directory" setting
+- Better integration with Reaper's internal configuration
+
+**Installation:**
+1. Go to https://www.sws-extension.org/
+2. Download the installer for your operating system
+3. Run the installer (Reaper should be closed)
+4. Restart Reaper - SWS will be automatically loaded
+
+**Without SWS:**
+- RASP will still work, but you'll need to configure Reaper settings manually
+- RASP will show instructions if a setting needs to be changed
 
 ## Installation Steps
 

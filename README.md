@@ -10,6 +10,17 @@ A Lua plugin for Reaper DAW that provides automatic project versioning with full
 - **Full project copy** - All media files copied to new version folder
 - **Cross-platform** - Works on Linux (Debian), Windows, and macOS
 
+## Requirements
+
+### Required
+- **Reaper DAW** v6.0 or newer (tested with v7.x)
+- **Operating System**: Windows, macOS, or Linux (Debian)
+
+### Recommended
+- **SWS Extension** - Enables automatic configuration of Reaper settings
+  - Download: https://www.sws-extension.org/
+  - Without SWS, RASP can detect misconfigured settings but cannot fix them automatically
+
 ## Project Structure
 
 ```

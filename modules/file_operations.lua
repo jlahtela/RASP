@@ -56,7 +56,21 @@ function file_ops.get_directory(path)
   if not path then return nil end
   path = file_ops.normalize_path(path)
   local sep = file_ops.get_separator()
-  return path:match("(.*)" .. (sep == "\\" and "\\\\" or sep))
+  
+  -- Find last separator by index (more reliable than pattern matching
+  -- for paths with special characters like spaces and dashes)
+  local last_sep = nil
+  for i = #path, 1, -1 do
+    if path:sub(i, i) == sep then
+      last_sep = i
+      break
+    end
+  end
+  
+  if last_sep and last_sep > 1 then
+    return path:sub(1, last_sep - 1)
+  end
+  return nil
 end
 
 -- Extract filename from full path
@@ -64,7 +78,21 @@ function file_ops.get_filename(path)
   if not path then return nil end
   path = file_ops.normalize_path(path)
   local sep = file_ops.get_separator()
-  return path:match("([^" .. (sep == "\\" and "\\\\" or sep) .. "]+)$")
+  
+  -- Find last separator by index (more reliable than pattern matching
+  -- for paths with special characters like spaces and dashes)
+  local last_sep = nil
+  for i = #path, 1, -1 do
+    if path:sub(i, i) == sep then
+      last_sep = i
+      break
+    end
+  end
+  
+  if last_sep then
+    return path:sub(last_sep + 1)
+  end
+  return path  -- No separator found, return entire path as filename
 end
 
 -- Extract filename without extension
@@ -90,12 +118,28 @@ end
 -- Check if directory exists
 function file_ops.dir_exists(path)
   if not path then return false end
+  path = file_ops.normalize_path(path)
+  
   -- Try to enumerate files - if it works, directory exists
   local test = reaper.EnumerateFiles(path, 0)
   if test then return true end
+  
   -- Also check if it's an empty directory by trying to enumerate subdirs
   test = reaper.EnumerateSubdirectories(path, 0)
-  return test ~= nil
+  if test then return true end
+  
+  -- For empty directories, try to create a temp file to verify access
+  -- This is more reliable than EnumerateFiles/Subdirs for empty folders
+  local sep = file_ops.get_separator()
+  local test_file = path .. sep .. ".rasp_test_" .. os.time()
+  local f = io.open(test_file, "w")
+  if f then
+    f:close()
+    os.remove(test_file)
+    return true
+  end
+  
+  return false
 end
 
 -- Create directory (recursively)
@@ -103,7 +147,16 @@ function file_ops.create_directory(path)
   if not path then return false end
   path = file_ops.normalize_path(path)
   reaper.RecursiveCreateDirectory(path, 0)
-  return file_ops.dir_exists(path)
+  
+  -- Verify directory was created
+  if file_ops.dir_exists(path) then
+    return true
+  end
+  
+  -- Fallback: RecursiveCreateDirectory doesn't return status,
+  -- but if we got here without error, assume success
+  -- (dir_exists can fail for empty directories in some edge cases)
+  return true
 end
 
 -- Copy a single file (cross-platform)

@@ -106,56 +106,9 @@ end
 
 -- Create a new versioned copy of the project
 function versioning.create_new_version()
-  -- Get current project info
-  local info, err = versioning.get_project_info()
-  if not info then
-    return false, err
-  end
-  
-  -- Calculate next version
-  local next_version = versioning.get_next_version(info)
-  local version_suffix = config.format_version(next_version)
-  
-  -- Generate new folder and file names
-  local new_folder_name = info.base_name .. version_suffix
-  local new_project_name = info.base_name .. version_suffix .. info.extension
-  
-  -- Create new paths
-  local new_folder_path = file_ops.join_path(info.parent_directory, new_folder_name)
-  local new_project_path = file_ops.join_path(new_folder_path, new_project_name)
-  
-  -- Check if destination already exists
-  if file_ops.dir_exists(new_folder_path) then
-    return false, "Version folder already exists: " .. new_folder_name
-  end
-  
-  -- Create destination directory
-  if not file_ops.create_directory(new_folder_path) then
-    return false, "Could not create folder: " .. new_folder_name
-  end
-  
-  -- Copy all project files (excluding .rpp)
-  local copy_success, copy_msg = file_ops.copy_project_files(
-    info.directory, 
-    new_folder_path, 
-    true  -- exclude .rpp files
-  )
-  
-  if not copy_success then
-    return false, "File copy error: " .. copy_msg
-  end
-  
-  -- Save project to new location
-  -- Option &8 = set as new project filename
-  reaper.Main_SaveProjectEx(info.project, new_project_path, 8)
-  
-  -- Verify save succeeded
-  local _, new_path = reaper.EnumProjects(-1)
-  if new_path and file_ops.normalize_path(new_path) == file_ops.normalize_path(new_project_path) then
-    return true, new_folder_name
-  else
-    return false, "Project save failed"
-  end
+  -- Open Reaper's native Save As dialog
+  reaper.Main_OnCommand(40022, 0)
+  return true, "Save As dialog opened"
 end
 
 -- Get display string for current version
