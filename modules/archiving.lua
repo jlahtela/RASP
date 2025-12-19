@@ -109,7 +109,7 @@ function archiving.archive_versions(archive_dest, versions_to_keep)
     return true, "No versions to archive"
   end
   
-  -- Archive each version
+  -- Archive each version (creates copies, originals are preserved)
   local archived_count = 0
   local errors = {}
   
@@ -120,8 +120,6 @@ function archiving.archive_versions(archive_dest, versions_to_keep)
     local success = file_ops.copy_directory(ver.path, dest_path)
     
     if success then
-      -- Optionally remove original after successful copy
-      -- For safety, we'll keep the original for now
       archived_count = archived_count + 1
     else
       table.insert(errors, "Failed to archive: " .. ver.name)

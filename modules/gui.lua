@@ -48,11 +48,6 @@ local state = {
   archive_destination = "",
   versions_to_keep = 3,
   
-  -- Input field state
-  input_active = false,
-  input_text = "",
-  input_cursor = 0,
-  
   -- Fonts
   font_normal = 1,
   font_large = 2,
@@ -88,7 +83,6 @@ function gui.update_project_info()
   local config = require("config")
   state.archive_destination = config.get("archive_destination")
   state.versions_to_keep = config.get("versions_to_keep")
-  state.input_text = tostring(state.versions_to_keep)
 end
 
 -- Helper: Set drawing color
