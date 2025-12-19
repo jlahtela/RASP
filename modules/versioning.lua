@@ -42,6 +42,11 @@ function versioning.get_project_info()
   -- Get parent directory (where versioned folders are created)
   local parent_dir = file_ops.get_directory(proj_dir)
   
+  -- If parent_dir is nil (project at root level), use proj_dir itself
+  if not parent_dir or parent_dir == "" then
+    parent_dir = proj_dir
+  end
+  
   return {
     project = proj,
     full_path = proj_path,
@@ -57,6 +62,8 @@ end
 
 -- Find highest existing version in parent directory
 function versioning.find_highest_version(parent_dir, base_name)
+  if not parent_dir then return 0 end
+  
   local highest = 0
   local prefix = config.get("version_prefix")
   
