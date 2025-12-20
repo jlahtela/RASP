@@ -142,7 +142,8 @@ Linux uses dot-prefix for hidden files (`.hidden`), while Windows uses file attr
 Our `cp -a` command on Linux preserves hidden files:
 ```lua
 -- Copies all files including .hidden ones
-cmd = string.format('cp -a "%s"/. "%s"/', source, dest)
+-- The "/." syntax copies directory contents, not the directory itself
+cmd = string.format('cp -a "%s"/. "%s"', source, dest)
 ```
 
 ### 3. Permissions

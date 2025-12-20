@@ -102,16 +102,17 @@ jobs:
             $crlfCount = ([regex]::Matches($content, "\r\n")).Count
             
             if ($crlfCount -gt 0) {
-              Write-Warning "$($_.Name) has CRLF line endings (expected LF via .gitattributes)"
+              Write-Error "$($_.Name) has CRLF line endings (expected LF via .gitattributes)"
               $hasIssues = $true
             } elseif ($lfCount -gt 0) {
               Write-Host "✓ $($_.Name) has correct LF line endings"
             }
           }
-          if (-not $hasIssues) {
-            Write-Host "Line ending check complete - all files use LF as expected"
+          if ($hasIssues) {
+            Write-Error "Line ending check failed - some files have incorrect line endings"
+            exit 1
           }
-          Write-Host "Line ending check complete"
+          Write-Host "Line ending check complete - all files use LF as expected"
       
       - name: Verify file operations module (Linux)
         if: runner.os == 'Linux'

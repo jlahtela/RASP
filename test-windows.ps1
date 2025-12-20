@@ -48,17 +48,19 @@ Get-ChildItem -Path . -Include *.lua -Recurse | ForEach-Object {
 }
 Write-Host ""
 
-Write-Host "3. Verifying line endings..."
+Write-Host "3. Verifying line endings (expecting LF via .gitattributes)..."
 Get-ChildItem -Path . -Include *.lua -Recurse | ForEach-Object {
     $content = Get-Content -Raw $_.FullName
-    # Check for consistent line endings
+    # Check if file has LF line endings (as expected via .gitattributes)
     $crlfCount = ([regex]::Matches($content, "`r`n")).Count
     $lfOnlyCount = ([regex]::Matches($content, "(?<!\r)`n")).Count
     
-    if ($lfOnlyCount -eq 0 -or $crlfCount -eq 0) {
-        Test-Result $true "Line endings: $($_.Name)"
+    if ($crlfCount -gt 0) {
+        Test-Result $false "Line endings: $($_.Name) (has CRLF, expected LF)"
+    } elseif ($lfOnlyCount -gt 0) {
+        Test-Result $true "Line endings: $($_.Name) (LF)"
     } else {
-        Test-Result $false "Line endings: $($_.Name) (mixed)"
+        Test-Result $false "Line endings: $($_.Name) (no line endings found)"
     }
 }
 Write-Host ""
