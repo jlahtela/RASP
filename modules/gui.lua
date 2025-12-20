@@ -44,6 +44,9 @@ local state = {
   -- Button states
   version_button_hover = false,
   
+  -- Versioning settings
+  versioning_mode = "auto",  -- "native" or "auto"
+  
   -- Archiving settings
   archive_destination = "",
   versions_to_keep = 3,
@@ -58,6 +61,11 @@ local state = {
 gui.should_create_version = false
 gui.should_archive_now = false
 gui.should_browse_archive_dest = false
+
+-- Get current versioning mode
+function gui.get_versioning_mode()
+  return state.versioning_mode
+end
 
 -- Set status message
 function gui.set_status(text, is_error)
@@ -79,10 +87,11 @@ function gui.update_project_info()
     state.project_path = ""
   end
   
-  -- Load archiving settings
+  -- Load settings
   local config = require("config")
   state.archive_destination = config.get("archive_destination")
   state.versions_to_keep = config.get("versions_to_keep")
+  state.versioning_mode = config.get("versioning_mode") or "auto"
 end
 
 -- Helper: Set drawing color
@@ -175,6 +184,39 @@ local function draw_input_field(value, x, y, w, h)
   return false
 end
 
+-- Helper: Draw switch with two options (returns "left" or "right" if clicked, nil otherwise)
+local function draw_switch(left_text, right_text, selected, x, y, w, h)
+  local half_w = w / 2
+  local is_left = (selected == "left" or selected == left_text:lower())
+  
+  -- Left side
+  local left_hover = mouse_in(x, y, half_w, h)
+  local left_bg = is_left and colors.accent or (left_hover and colors.panel or colors.background)
+  draw_rect(x, y, half_w, h, left_bg)
+  draw_border(x, y, half_w, h, colors.border)
+  local left_text_color = is_left and colors.button_text or colors.text_dim
+  draw_text_centered(left_text, x, y, half_w, h, left_text_color)
+  
+  -- Right side
+  local right_hover = mouse_in(x + half_w, y, half_w, h)
+  local right_bg = not is_left and colors.accent or (right_hover and colors.panel or colors.background)
+  draw_rect(x + half_w, y, half_w, h, right_bg)
+  draw_border(x + half_w, y, half_w, h, colors.border)
+  local right_text_color = not is_left and colors.button_text or colors.text_dim
+  draw_text_centered(right_text, x + half_w, y, half_w, h, right_text_color)
+  
+  -- Handle clicks (only on mouse release)
+  if gfx.mouse_cap == 0 and gui._last_mouse_cap == 1 then
+    if left_hover and not is_left then
+      return "left"
+    elseif right_hover and is_left then
+      return "right"
+    end
+  end
+  
+  return nil
+end
+
 -- Draw header section
 local function draw_header(x, y, w)
   local h = 60
@@ -228,17 +270,37 @@ end
 
 -- Draw versioning section
 local function draw_versioning_section(x, y, w)
-  local h = 70
+  local h = 105
   local padding = 15
   local btn_w = w - padding * 2
   local btn_h = 36
+  local switch_w = 160
+  local switch_h = 24
   
   -- Section title
   draw_text("Versioning", x + padding, y + 5, colors.text_dim, state.font_small)
   
+  -- Saving method label and switch
+  draw_text("Saving method:", x + padding, y + 28, colors.text, state.font_small)
+  
+  -- Determine current selection for switch
+  local switch_selected = state.versioning_mode == "native" and "left" or "right"
+  local switch_result = draw_switch("Native", "Auto", switch_selected, x + padding + 110, y + 24, switch_w, switch_h)
+  
+  if switch_result then
+    local config = require("config")
+    if switch_result == "left" then
+      state.versioning_mode = "native"
+      config.set("versioning_mode", "native")
+    else
+      state.versioning_mode = "auto"
+      config.set("versioning_mode", "auto")
+    end
+  end
+  
   -- Create new version button
   local has_project = state.project_name ~= "" and state.project_name ~= "No project loaded"
-  if draw_button("Create New Version", x + padding, y + 25, btn_w, btn_h, has_project) then
+  if draw_button("Create New Version", x + padding, y + 58, btn_w, btn_h, has_project) then
     gui.should_create_version = true
   end
   

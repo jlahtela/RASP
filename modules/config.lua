@@ -18,6 +18,8 @@ local defaults = {
   version_digits = 3,
   -- Starting version number for new projects
   start_version = 1,
+  -- Versioning mode: "native" (Reaper Save As dialog) or "auto" (full automated copy)
+  versioning_mode = "auto",
   -- Archiving settings
   archive_destination = "",
   versions_to_keep = 3,
