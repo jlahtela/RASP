@@ -208,7 +208,14 @@ function file_ops.copy_directory(source, dest)
     return result == true
   else
     -- Use cp -r on Linux/macOS
-    cmd = string.format('cp -r "%s"/* "%s"/', source, dest)
+    -- First ensure destination directory exists
+    if not file_ops.dir_exists(dest) then
+      file_ops.create_directory(dest)
+    end
+    
+    -- Copy directory contents, including hidden files
+    -- Using -a preserves permissions and timestamps
+    cmd = string.format('cp -a "%s"/. "%s"/', source, dest)
     local result = os.execute(cmd)
     return result == 0 or result == true
   end
