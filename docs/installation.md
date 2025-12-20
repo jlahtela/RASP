@@ -119,19 +119,22 @@ reaper.SetExtState("RASP", "version_digits", "4", true)
 
 ## Platform-Specific Notes
 
-### Linux (Debian/Ubuntu)
+### Debian Linux (Primary Target)
 
-RASP is fully compatible with Linux systems. Key points:
+RASP is developed and tested primarily on **Debian 12 (Bookworm)**. It is fully compatible with Debian-based distributions including Ubuntu.
 
 **Requirements:**
 - Reaper DAW installed (see https://www.reaper.fm/download.php)
-- Standard GNU utilities (`cp`, `mkdir`) - usually pre-installed
+- Standard GNU utilities (`cp`, `mkdir`) - pre-installed on Debian
+- Lua (for testing): `sudo apt-get install lua5.4`
 
 **Testing your installation:**
 ```bash
 cd /path/to/REAPER/Scripts/RASP
 ./test-linux.sh
 ```
+
+The test script will detect your OS and confirm Debian compatibility.
 
 **File paths:**
 - RASP automatically uses Unix-style forward slashes (`/`) on Linux
@@ -140,6 +143,10 @@ cd /path/to/REAPER/Scripts/RASP
 **Permissions:**
 - Make sure Reaper has write permissions to your project directories
 - If using external drives, ensure they're mounted with proper permissions
+
+### Ubuntu and other Debian-based distributions
+
+Ubuntu and other Debian-based distributions are fully supported as they share the same core utilities and package management with Debian.
 
 ### Windows
 

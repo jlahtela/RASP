@@ -2,7 +2,7 @@
 
 ## Cross-Platform Compatibility
 
-RASP is designed to work seamlessly on **Linux (Debian/Ubuntu)** and **Windows 10/11**. This guide explains how to maintain cross-platform compatibility.
+RASP is designed to work seamlessly on **Debian Linux** (primary target), **Ubuntu**, and **Windows 10/11**. This guide explains how to maintain cross-platform compatibility.
 
 ### Key Principles
 
@@ -15,14 +15,16 @@ RASP is designed to work seamlessly on **Linux (Debian/Ubuntu)** and **Windows 1
 
 Before submitting a PR, test on both platforms:
 
-#### Linux/Debian Testing
+#### Debian/Linux Testing (Primary Target)
 ```bash
-# Install Lua if needed
+# Install Lua if needed (Debian/Ubuntu)
 sudo apt-get install lua5.4
 
 # Run tests
 ./test-linux.sh
 ```
+
+The test script will detect your OS and confirm Debian-based compatibility.
 
 #### Windows Testing
 ```powershell
@@ -36,7 +38,7 @@ choco install lua
 ### CI/CD Pipeline
 
 Every push triggers automated tests on both platforms via GitHub Actions:
-- Ubuntu Latest (representing Debian/Linux)
+- Ubuntu Latest (Debian-based, representing Debian/Linux compatibility)
 - Windows Latest
 
 See `.github/workflows/test.yml` for details.

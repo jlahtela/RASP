@@ -1,11 +1,23 @@
 #!/usr/bin/env bash
 # RASP Cross-Platform Test Script for Linux/Debian
-# This script verifies that RASP works correctly on Linux systems
+# This script verifies that RASP works correctly on Debian-based Linux systems
 
 echo "================================================"
 echo "  RASP Linux Compatibility Test"
 echo "================================================"
 echo ""
+
+# Detect OS
+if [ -f /etc/os-release ]; then
+    . /etc/os-release
+    echo "Testing on: $PRETTY_NAME"
+    if [[ "$ID" == "debian" ]] || [[ "$ID_LIKE" == *"debian"* ]]; then
+        echo "✓ Debian-based system detected"
+    else
+        echo "⚠ Warning: Not a Debian-based system"
+    fi
+    echo ""
+fi
 
 # Color codes
 RED='\033[0;31m'

@@ -18,6 +18,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # ubuntu-latest is used for Linux testing as it's Debian-based
+        # and provides the same core utilities and compatibility as Debian
         os: [ubuntu-latest, windows-latest]
         include:
           - os: ubuntu-latest
