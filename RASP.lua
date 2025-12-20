@@ -45,14 +45,24 @@ local function main()
   -- Handle GUI events
   if gui.should_create_version then
     gui.should_create_version = false
-    gui.set_status("Creating new version...")
     
-    local success, result = versioning.create_new_version()
+    local mode = gui.get_versioning_mode()
+    if mode == "auto" then
+      gui.set_status("Creating new version (auto)...")
+    else
+      gui.set_status("Opening Save As dialog...")
+    end
+    
+    local success, result = versioning.create_new_version(mode)
     if success then
-      gui.set_status("Version created: " .. result)
+      if mode == "native" then
+        gui.set_status("Save As dialog opened")
+      else
+        gui.set_status("Version created successfully")
+      end
       gui.update_project_info()
     else
-      gui.set_status("Error: " .. result)
+      gui.set_status("Error: " .. (result or "Unknown error"), true)
     end
   end
   

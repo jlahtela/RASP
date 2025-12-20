@@ -187,31 +187,154 @@ function file_ops.copy_file(source, dest)
   end
 end
 
+-- Count files in a directory (for verification)
+function file_ops.count_files_in_dir(path)
+  if not path then return 0 end
+  path = file_ops.normalize_path(path)
+  
+  local count = 0
+  
+  local function scan_dir(dir)
+    -- Count files
+    local i = 0
+    while true do
+      local filename = reaper.EnumerateFiles(dir, i)
+      if not filename then break end
+      count = count + 1
+      i = i + 1
+    end
+    
+    -- Recurse into subdirectories
+    i = 0
+    while true do
+      local subdir = reaper.EnumerateSubdirectories(dir, i)
+      if not subdir then break end
+      scan_dir(file_ops.join_path(dir, subdir))
+      i = i + 1
+    end
+  end
+  
+  scan_dir(path)
+  return count
+end
+
+-- Execute command and get exit code (cross-platform)
+local function execute_with_exitcode(cmd)
+  local os_type = file_ops.get_os()
+  local full_cmd
+  
+  if os_type == "windows" then
+    -- Windows: use cmd /c and echo ERRORLEVEL
+    full_cmd = string.format('cmd /c "%s & echo %%ERRORLEVEL%%"', cmd)
+  else
+    -- Unix: append exit code
+    full_cmd = string.format('%s ; echo $?', cmd)
+  end
+  
+  local handle = io.popen(full_cmd)
+  if not handle then
+    return nil, "Failed to execute command"
+  end
+  
+  local result = handle:read("*a")
+  handle:close()
+  
+  -- Extract exit code from last line
+  local exit_code = tonumber(result:match("(%d+)%s*$"))
+  return exit_code
+end
+
 -- Copy entire directory (cross-platform)
 function file_ops.copy_directory(source, dest)
   if not source or not dest then return false, "Invalid paths" end
+  if not file_ops.dir_exists(source) then return false, "Source directory not found: " .. source end
   
   source = file_ops.normalize_path(source)
   dest = file_ops.normalize_path(dest)
   
+  -- Create destination if it doesn't exist
+  if not file_ops.dir_exists(dest) then
+    file_ops.create_directory(dest)
+  end
+  
+  -- Count source files for verification
+  local source_count = file_ops.count_files_in_dir(source)
+  
   local os_type = file_ops.get_os()
   local cmd
+  local exit_code
   
   if os_type == "windows" then
     -- Use robocopy on Windows (returns 0-7 for success)
     cmd = string.format('robocopy "%s" "%s" /E /NFL /NDL /NJH /NJS', source, dest)
-    local result = os.execute(cmd)
-    -- Robocopy returns 0-7 for various success states
-    if type(result) == "number" then
-      return result <= 7
+    exit_code = execute_with_exitcode(cmd)
+    
+    -- Robocopy: 0-7 = success (with various copy states), 8+ = error
+    if not exit_code or exit_code >= 8 then
+      return false, "Robocopy failed with exit code: " .. tostring(exit_code)
     end
-    return result == true
   else
-    -- Use cp -r on Linux/macOS
-    cmd = string.format('cp -r "%s"/* "%s"/', source, dest)
-    local result = os.execute(cmd)
-    return result == 0 or result == true
+    -- Use cp -r on Linux/macOS (use /. to include hidden files)
+    cmd = string.format('cp -r "%s"/. "%s"/', source, dest)
+    exit_code = execute_with_exitcode(cmd)
+    
+    if not exit_code or exit_code ~= 0 then
+      return false, "Copy failed with exit code: " .. tostring(exit_code)
+    end
   end
+  
+  -- Verify destination has files
+  local dest_count = file_ops.count_files_in_dir(dest)
+  if dest_count == 0 and source_count > 0 then
+    return false, "Copy verification failed: destination is empty"
+  end
+  
+  return true
+end
+
+-- Delete entire directory (cross-platform)
+function file_ops.delete_directory(path)
+  if not path or path == "" then return false, "Invalid path" end
+  if not file_ops.dir_exists(path) then return false, "Directory not found: " .. path end
+  
+  path = file_ops.normalize_path(path)
+  
+  -- Safety check: don't delete root or very short paths
+  if #path < 10 then
+    return false, "Safety check: path too short to delete"
+  end
+  
+  local os_type = file_ops.get_os()
+  local cmd
+  local exit_code
+  
+  if os_type == "windows" then
+    -- Use rmdir /S /Q on Windows
+    cmd = string.format('rmdir /S /Q "%s"', path)
+  else
+    -- Use rm -rf on Linux/macOS
+    cmd = string.format('rm -rf "%s"', path)
+  end
+  
+  exit_code = execute_with_exitcode(cmd)
+  
+  if os_type == "windows" then
+    -- rmdir returns 0 on success
+    if exit_code ~= 0 then
+      return false, "Delete failed with exit code: " .. tostring(exit_code)
+    end
+  else
+    if exit_code ~= 0 then
+      return false, "Delete failed with exit code: " .. tostring(exit_code)
+    end
+  end
+  
+  -- Verify directory is gone
+  if file_ops.dir_exists(path) then
+    return false, "Delete verification failed: directory still exists"
+  end
+  
+  return true
 end
 
 -- Get all media files used in current project
