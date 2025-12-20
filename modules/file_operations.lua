@@ -215,7 +215,8 @@ function file_ops.copy_directory(source, dest)
     
     -- Copy directory contents, including hidden files
     -- Using -a preserves permissions and timestamps
-    cmd = string.format('cp -a "%s"/. "%s"/', source, dest)
+    -- The "/." syntax ensures we copy contents, not the directory itself
+    cmd = string.format('cp -a "%s"/. "%s"', source, dest)
     local result = os.execute(cmd)
     return result == 0 or result == true
   end

@@ -44,10 +44,17 @@ jobs:
           choco install lua -y
           lua -v
       
-      - name: Verify Lua syntax
+      - name: Verify Lua syntax (Linux)
+        if: runner.os == 'Linux'
         run: |
           echo "Checking Lua syntax for all files..."
-          lua${{ runner.os == 'Windows' && '' || '5.4' }} -e "print('Lua is working')"
+          lua5.4 -e "print('Lua is working')"
+      
+      - name: Verify Lua syntax (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          Write-Host "Checking Lua syntax for all files..."
+          lua -e "print('Lua is working')"
       
       - name: Check Lua file syntax (Linux)
         if: runner.os == 'Linux'
@@ -87,11 +94,22 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           Write-Host "Checking line endings..."
+          $hasIssues = $false
           Get-ChildItem -Path . -Include *.lua -Recurse | ForEach-Object {
             $content = Get-Content -Raw $_.FullName
-            if ($content -match "`r`n`r`n`r`n") {
-              Write-Warning "$($_.Name) may have mixed line endings"
+            # Check if file has LF line endings (as expected via .gitattributes)
+            $lfCount = ([regex]::Matches($content, "(?<!\r)\n")).Count
+            $crlfCount = ([regex]::Matches($content, "\r\n")).Count
+            
+            if ($crlfCount -gt 0) {
+              Write-Warning "$($_.Name) has CRLF line endings (expected LF via .gitattributes)"
+              $hasIssues = $true
+            } elseif ($lfCount -gt 0) {
+              Write-Host "✓ $($_.Name) has correct LF line endings"
             }
+          }
+          if (-not $hasIssues) {
+            Write-Host "Line ending check complete - all files use LF as expected"
           }
           Write-Host "Line ending check complete"
       
