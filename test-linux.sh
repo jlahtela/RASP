@@ -118,6 +118,11 @@ local joined = file_ops.join_path("/home", "user", "test.lua")
 assert(joined == "/home/user/test.lua", "Path join failed")
 print("   ✓ Path joining")
 
+-- Test 6: count_files_in_dir function (new in V0.2)
+local count = file_ops.count_files_in_dir("/nonexistent")
+assert(count == 0, "count_files_in_dir should return 0 for nonexistent dir")
+print("   ✓ count_files_in_dir returns 0 for nonexistent directory")
+
 print("\n   All file_operations tests passed!")
 EOF
 test_result $? "file_operations module"
