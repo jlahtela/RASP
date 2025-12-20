@@ -7,6 +7,10 @@ on:
     branches: [ main, V0.2_features ]
   workflow_dispatch:
 
+# Restrict permissions for security
+permissions:
+  contents: read
+
 jobs:
   test:
     name: Test on ${{ matrix.os }}
