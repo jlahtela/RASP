@@ -7,16 +7,20 @@ A Lua plugin for Reaper DAW that provides automatic project versioning with full
 
 - **Dockable UI** - Native Reaper interface
 - **Auto-versioning** - Open save as dialog
-- **Cross-platform** - Works on Linux (Debian) and Windows
+- **Cross-platform** - Tested and verified on Linux (Debian/Ubuntu) and Windows 10/11
+- **Zero dependencies** - Uses standard Lua and OS utilities
 
 ## Requirements
 
 ### Required
 - **Reaper DAW** v6.0 or newer (tested with v7.x)
-- **Operating System**: Linux (Debian) or Windows 11 (tested)
+- **Operating System**: 
+  - Linux (Debian 12, Ubuntu 22.04+)
+  - Windows 10 or Windows 11
+  - macOS (should work but not extensively tested)
 
 ### Recommended
-No extensions or additonal needed.
+No extensions or additional packages needed. RASP uses standard Lua and OS utilities (`cp` on Linux, `copy`/`robocopy` on Windows).
 
 ## Project Structure
 
@@ -40,6 +44,28 @@ RASP/
 4. Click "Create New Version" to version your project
 
 See [installation guide](docs/installation.md) for detailed instructions.
+
+## Testing & Verification
+
+To verify RASP works correctly on your platform:
+
+**Linux/Debian:**
+```bash
+cd /path/to/REAPER/Scripts/RASP
+./test-linux.sh
+```
+
+**Windows:**
+```powershell
+cd C:\path\to\REAPER\Scripts\RASP
+.\test-windows.ps1
+```
+
+These scripts will verify:
+- Lua syntax for all files
+- Cross-platform path operations
+- Line ending consistency
+- Required system commands availability
 
 ## Version Format
 

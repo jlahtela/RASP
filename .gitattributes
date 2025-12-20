@@ -1,0 +1,31 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Lua scripts should always use LF (Unix-style) line endings
+# This is important for cross-platform compatibility
+*.lua text eol=lf
+
+# Markdown files
+*.md text eol=lf
+
+# Shell scripts (if added in the future)
+*.sh text eol=lf
+
+# Windows batch files (if added in the future)
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Documentation
+*.txt text eol=lf
+LICENSE text eol=lf
+README text eol=lf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.wav binary
+*.mp3 binary

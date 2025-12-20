@@ -117,6 +117,47 @@ reaper.SetExtState("RASP", "version_prefix", "_ver", true)
 reaper.SetExtState("RASP", "version_digits", "4", true)
 ```
 
+## Platform-Specific Notes
+
+### Linux (Debian/Ubuntu)
+
+RASP is fully compatible with Linux systems. Key points:
+
+**Requirements:**
+- Reaper DAW installed (see https://www.reaper.fm/download.php)
+- Standard GNU utilities (`cp`, `mkdir`) - usually pre-installed
+
+**Testing your installation:**
+```bash
+cd /path/to/REAPER/Scripts/RASP
+./test-linux.sh
+```
+
+**File paths:**
+- RASP automatically uses Unix-style forward slashes (`/`) on Linux
+- All file operations are cross-platform compatible
+
+**Permissions:**
+- Make sure Reaper has write permissions to your project directories
+- If using external drives, ensure they're mounted with proper permissions
+
+### Windows
+
+RASP fully supports Windows 10 and Windows 11.
+
+**Requirements:**
+- Standard Windows commands (`copy`, `robocopy`) - pre-installed
+
+**Testing your installation:**
+```powershell
+cd C:\path\to\REAPER\Scripts\RASP
+.\test-windows.ps1
+```
+
+**File paths:**
+- RASP automatically uses Windows-style backslashes (`\`) on Windows
+- Works with network drives and UNC paths
+
 ## Troubleshooting
 
 ### "No project loaded"
@@ -126,8 +167,14 @@ reaper.SetExtState("RASP", "version_digits", "4", true)
 ### Files not copying
 - Check write permissions on the destination folder
 - Ensure enough disk space is available
-- On Linux: verify `cp` command is available
-- On Windows: verify `copy` command is available
+- **On Linux/Debian:** verify `cp` command is available (run `which cp`)
+- **On Windows:** verify `copy` and `robocopy` commands are available
+- **On Linux:** Check file permissions with `ls -la`
+
+### Permission denied errors (Linux)
+- Ensure the destination directory is writable: `chmod 755 /path/to/projects`
+- Check if the filesystem is mounted read-only: `mount | grep /path/to/drive`
+- For external drives, remount with write permissions
 
 ### Window doesn't dock
 - The RASP window can be docked by dragging it to a dock area

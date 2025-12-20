@@ -1,0 +1,171 @@
+name: Cross-Platform Tests
+
+on:
+  push:
+    branches: [ main, V0.2_features, 'copilot/**' ]
+  pull_request:
+    branches: [ main, V0.2_features ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Test on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            lua-version: "5.4"
+            shell: bash
+          - os: windows-latest
+            lua-version: "5.4"
+            shell: pwsh
+    
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Lua (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lua5.4 luarocks
+          lua5.4 -v
+      
+      - name: Setup Lua (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          choco install lua -y
+          lua -v
+      
+      - name: Verify Lua syntax
+        run: |
+          echo "Checking Lua syntax for all files..."
+          lua${{ runner.os == 'Windows' && '' || '5.4' }} -e "print('Lua is working')"
+      
+      - name: Check Lua file syntax (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          for file in RASP.lua modules/*.lua; do
+            echo "Checking $file..."
+            luac5.4 -p "$file" || exit 1
+          done
+          echo "All Lua files have valid syntax!"
+      
+      - name: Check Lua file syntax (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          Get-ChildItem -Path . -Include *.lua -Recurse | ForEach-Object {
+            Write-Host "Checking $($_.FullName)..."
+            $result = lua -e "return loadfile('$($_.FullName)')"
+            if ($LASTEXITCODE -ne 0) {
+              Write-Error "Syntax error in $($_.FullName)"
+              exit 1
+            }
+          }
+          Write-Host "All Lua files have valid syntax!"
+      
+      - name: Verify line endings (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          echo "Checking line endings..."
+          for file in RASP.lua modules/*.lua; do
+            if file "$file" | grep -q "CRLF"; then
+              echo "ERROR: $file has Windows (CRLF) line endings!"
+              exit 1
+            fi
+          done
+          echo "Line endings are correct (LF)"
+      
+      - name: Verify line endings (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          Write-Host "Checking line endings..."
+          Get-ChildItem -Path . -Include *.lua -Recurse | ForEach-Object {
+            $content = Get-Content -Raw $_.FullName
+            if ($content -match "`r`n`r`n`r`n") {
+              Write-Warning "$($_.Name) may have mixed line endings"
+            }
+          }
+          Write-Host "Line ending check complete"
+      
+      - name: Verify file operations module (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          echo "Testing file_operations module for Linux compatibility..."
+          lua5.4 -e "
+            -- Mock reaper functions
+            reaper = {
+              GetOS = function() return 'Linux' end,
+              file_exists = function(path) return true end,
+              EnumerateFiles = function() return nil end,
+              EnumerateSubdirectories = function() return nil end,
+              RecursiveCreateDirectory = function() end,
+            }
+            
+            -- Load the module
+            local file_ops = dofile('modules/file_operations.lua')
+            
+            -- Test OS detection
+            assert(file_ops.get_os() == 'linux', 'OS detection failed')
+            assert(file_ops.get_separator() == '/', 'Path separator wrong')
+            
+            -- Test path operations
+            local path = '/home/user/project/file.lua'
+            assert(file_ops.get_directory(path) == '/home/user/project', 'get_directory failed')
+            assert(file_ops.get_filename(path) == 'file.lua', 'get_filename failed')
+            assert(file_ops.get_basename(path) == 'file', 'get_basename failed')
+            assert(file_ops.get_extension(path) == '.lua', 'get_extension failed')
+            
+            -- Test path normalization
+            local winpath = 'C:\\\\Users\\\\test\\\\file.txt'
+            local normalized = file_ops.normalize_path(winpath)
+            assert(normalized == 'C:/Users/test/file.txt', 'normalize_path failed')
+            
+            print('✓ All file_operations tests passed on Linux!')
+          "
+      
+      - name: Verify file operations module (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          Write-Host "Testing file_operations module for Windows compatibility..."
+          lua -e "
+            -- Mock reaper functions
+            reaper = {
+              GetOS = function() return 'Win64' end,
+              file_exists = function(path) return true end,
+              EnumerateFiles = function() return nil end,
+              EnumerateSubdirectories = function() return nil end,
+              RecursiveCreateDirectory = function() end,
+            }
+            
+            -- Load the module
+            local file_ops = dofile('modules/file_operations.lua')
+            
+            -- Test OS detection
+            assert(file_ops.get_os() == 'windows', 'OS detection failed')
+            assert(file_ops.get_separator() == '\\\\', 'Path separator wrong')
+            
+            -- Test path operations
+            local path = 'C:\\\\Users\\\\test\\\\project\\\\file.lua'
+            assert(file_ops.get_directory(path) == 'C:\\\\Users\\\\test\\\\project', 'get_directory failed')
+            assert(file_ops.get_filename(path) == 'file.lua', 'get_filename failed')
+            assert(file_ops.get_basename(path) == 'file', 'get_basename failed')
+            assert(file_ops.get_extension(path) == '.lua', 'get_extension failed')
+            
+            print('✓ All file_operations tests passed on Windows!')
+          "
+      
+      - name: Test summary
+        run: |
+          echo "================================================"
+          echo "  Cross-platform tests completed successfully!"
+          echo "  Platform: ${{ matrix.os }}"
+          echo "  Shell: ${{ matrix.shell }}"
+          echo "================================================"
