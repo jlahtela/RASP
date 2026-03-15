@@ -52,7 +52,6 @@ See [installation guide](docs/installation.md) for detailed instructions.
 MyProject/MyProject.rpp            → Original
 MyProject_v001/MyProject_v001.rpp  → Version 1
 MyProject_v002/MyProject_v002.rpp  → Version 2
-MyProject_v002_a/MyProject_v002_a.rpp  → Version 2 (alongside)
 ```
 
 ---
@@ -92,7 +91,6 @@ Fully automated versioning that guarantees all media files are copied.
 
 **When to use:**
 - You want fast, reliable versioning
-- You want to ensure no media references break
 - You want to ensure no media references break
 
 **How it works:**
@@ -153,16 +151,13 @@ This ensures your versioned projects are **100% self-contained** and portable.
 ### Version 0.2 ✅
 - Safe versioning with full media copy
 - Native/Auto mode selection
-- Conflict handling (alongside/overwrite/cancel)
+- Conflict handling (increment/overwrite/cancel)
 - Console logging with detailed feedback
+- Local archiving: move old versions to a configurable archive destination
+- Configurable "versions to keep" setting (default 3)
 
 ### Version 0.3 (planned)
-- Archiving action of projects to local drive
-- UI for archiving 
-- Select how many versions are kept and rest are archived
-
-### Version 0.4 (planned)
-- Make archiving action of projects to Backblaze B2
+- Cloud archiving via Backblaze B2
 - Able to pull back project from archive from Backblaze B2
 
 ### Future
