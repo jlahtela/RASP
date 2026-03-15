@@ -166,7 +166,7 @@ function versioning.create_new_version_safe()
     local resolved_path, resolved_name = handle_version_conflict(new_folder_path, new_folder_name, info, next_version)
     if not resolved_path then
       log_message("   ⚠️ Operation cancelled by user")
-      return false, "Operation cancelled"
+      return true, "Operation cancelled"
     end
     new_folder_path = resolved_path
     new_folder_name = resolved_name

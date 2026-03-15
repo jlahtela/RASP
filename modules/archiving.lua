@@ -89,7 +89,7 @@ function archiving.get_versions_to_archive(current_version, versions_to_keep)
   for _, ver in ipairs(all_versions) do
     -- Archive if version is less than cutoff AND not the current version
     -- Current version is NEVER archived, even if it would be below cutoff
-    if ver.version < cutoff_version and ver.version ~= current_version then
+    if ver.version <= cutoff_version and ver.version ~= current_version then
       table.insert(to_archive, ver)
     end
   end
