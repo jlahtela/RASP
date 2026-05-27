@@ -1,6 +1,14 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for AI coding agents (GitHub Copilot CLI and similar) working in this repository.
+
+## Project classification
+
+**Henkilökohtainen projekti.** Sijaitsee polussa `C:\Repos\Omat\RASP`, ei Zuren työprojekti. Zuren default-käytäntöjä (Zure-group org, AI-development-defaults wiki, asiakas-NDA) ei sovelleta.
+
+- GitHub-org: `Zesseth` (käyttäjän henkilökohtainen)
+- Lisenssi: ks. `LICENSE` (public repo)
+- Kieli: kaikki koodi, kommentit, commitit, issuet, PR:t ja dokumentaatio **englanniksi** (public repo). Tämä AGENTS.md on poikkeus — agent-ohjeet suomeksi.
 
 ## Project Overview
 
@@ -42,19 +50,23 @@ modules/
 - `reaper.ShowMessageBox` — confirmation dialogs
 - `reaper.GetProjectPath` / `reaper.GetProjectName` — current open project info
 
-## Language
+## Platform
 
-All code comments, commit messages, issue comments, PR descriptions, and documentation must be written in **English**. This is a public repository.
+- **Tuettu:** Linux (Debian), testattu Reaper v7.x:llä. Vaatii Reaper v6.0+.
+- **Ei tuettu:** Windows — archiving käyttää `cp`/`rm` shell-komentoja joita ei ole Windowsissa.
 
 ## Current Development State
 
-**Active branch:** `V0.1_features` — implements roadmap v0.2 features (untested as of 2026-03-13):
-- Local archiving: move old version folders to a configurable archive destination
-- Configurable "versions to keep" setting (default 3)
-- Dual save mode toggle: Native (Reaper's Save As dialog) vs Auto (fully automated via `Main_SaveProjectEx`)
+- **`master`** — stable release.
+- **`V0.1_features`** — active branch, PR #21. Toteuttaa sekä v0.1- että v0.2-roadmap-featuret (UI, auto-versioning, increment, archiving, native/auto-tila, conflict handling). Issue #29 toteaa featurejen olevan tiedostetusti sekaisin samassa branchissa — molemmat mergetään masteriin yhdessä v0.2:na.
+- **`V0.3_features`** — Backblaze B2 cloud archiving, ei aloitettu.
 
-`master` contains the stable v0.1 release (basic versioning only).
+## Agent workflow säännöt
 
-**Branch history note:** `V0.1_features` was built on top of the archiving code — the two feature sets (archiving + save mode toggle) are tightly coupled in gui.lua and cannot be separated cleanly. Both will merge to master together as v0.2.
-
-**Next:** `V0.3_features` — cloud archiving via Backblaze B2 (not started).
+- **Git:**
+  - `git add` (staging) ok automaattisesti.
+  - `git commit` vasta käyttäjän eksplisiittisen vahvistuksen jälkeen — odota että käyttäjä on katsonut `git diff --staged`.
+  - `git push` vain eksplisiittisestä pyynnöstä.
+- **Ei AI-tekijyysmerkintöjä** commit-viesteihin, PR-kuvauksiin tai tuotettuun sisältöön. Kiellettyjä: `Co-authored-by: Copilot`, `Generated with ...`, `🤖 Generated with ...` ja vastaavat. Jos commit-pohja ehdottaa niitä, poista ennen commitia.
+- **Destruktiiviset operaatiot** (poisto, force-push, hard reset remoteen menossa, salaisuuksien paljastaminen) vaativat aina eksplisiittisen luvan.
+- **Konfliktit:** kun mergetään masteria, tarkista että roadmap ja dokumentaatio ovat linjassa toteutettujen featurejen kanssa.
