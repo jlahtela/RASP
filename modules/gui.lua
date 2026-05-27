@@ -44,6 +44,13 @@ local state = {
   -- Button states
   version_button_hover = false,
   
+  -- Versioning settings
+  versioning_mode = "auto",  -- "native" or "auto"
+  
+  -- Archiving settings
+  archive_destination = "",
+  versions_to_keep = 3,
+  
   -- Fonts
   font_normal = 1,
   font_large = 2,
@@ -52,6 +59,13 @@ local state = {
 
 -- Public flags
 gui.should_create_version = false
+gui.should_archive_now = false
+gui.should_browse_archive_dest = false
+
+-- Get current versioning mode
+function gui.get_versioning_mode()
+  return state.versioning_mode
+end
 
 -- Set status message
 function gui.set_status(text, is_error)
@@ -72,6 +86,12 @@ function gui.update_project_info()
   else
     state.project_path = ""
   end
+  
+  -- Load settings
+  local config = require("config")
+  state.archive_destination = config.get("archive_destination")
+  state.versions_to_keep = config.get("versions_to_keep")
+  state.versioning_mode = config.get("versioning_mode") or "auto"
 end
 
 -- Helper: Set drawing color
@@ -139,6 +159,64 @@ local function draw_button(text, x, y, w, h, enabled)
   return false
 end
 
+-- Helper: Draw input field for numbers
+local function draw_input_field(value, x, y, w, h)
+  local hover = mouse_in(x, y, w, h)
+  
+  -- Draw background
+  local bg_color = hover and colors.panel or colors.background
+  draw_rect(x, y, w, h, bg_color)
+  draw_border(x, y, w, h, colors.border)
+  
+  -- Draw value
+  set_color(colors.text)
+  gfx.setfont(state.font_normal)
+  local text_w, text_h = gfx.measurestr(tostring(value))
+  gfx.x = x + (w - text_w) / 2
+  gfx.y = y + (h - text_h) / 2
+  gfx.drawstr(tostring(value))
+  
+  -- Return true if clicked (for editing)
+  if hover and gfx.mouse_cap == 0 and gui._last_mouse_cap == 1 then
+    return true
+  end
+  
+  return false
+end
+
+-- Helper: Draw switch with two options (returns "left" or "right" if clicked, nil otherwise)
+local function draw_switch(left_text, right_text, selected, x, y, w, h)
+  local half_w = w / 2
+  local is_left = (selected == "left" or selected == left_text:lower())
+  
+  -- Left side
+  local left_hover = mouse_in(x, y, half_w, h)
+  local left_bg = is_left and colors.accent or (left_hover and colors.panel or colors.background)
+  draw_rect(x, y, half_w, h, left_bg)
+  draw_border(x, y, half_w, h, colors.border)
+  local left_text_color = is_left and colors.button_text or colors.text_dim
+  draw_text_centered(left_text, x, y, half_w, h, left_text_color)
+  
+  -- Right side
+  local right_hover = mouse_in(x + half_w, y, half_w, h)
+  local right_bg = not is_left and colors.accent or (right_hover and colors.panel or colors.background)
+  draw_rect(x + half_w, y, half_w, h, right_bg)
+  draw_border(x + half_w, y, half_w, h, colors.border)
+  local right_text_color = not is_left and colors.button_text or colors.text_dim
+  draw_text_centered(right_text, x + half_w, y, half_w, h, right_text_color)
+  
+  -- Handle clicks (only on mouse release)
+  if gfx.mouse_cap == 0 and gui._last_mouse_cap == 1 then
+    if left_hover and not is_left then
+      return "left"
+    elseif right_hover and is_left then
+      return "right"
+    end
+  end
+  
+  return nil
+end
+
 -- Draw header section
 local function draw_header(x, y, w)
   local h = 60
@@ -192,17 +270,37 @@ end
 
 -- Draw versioning section
 local function draw_versioning_section(x, y, w)
-  local h = 70
+  local h = 105
   local padding = 15
   local btn_w = w - padding * 2
   local btn_h = 36
+  local switch_w = 160
+  local switch_h = 24
   
   -- Section title
   draw_text("Versioning", x + padding, y + 5, colors.text_dim, state.font_small)
   
+  -- Saving method label and switch
+  draw_text("Saving method:", x + padding, y + 28, colors.text, state.font_small)
+  
+  -- Determine current selection for switch
+  local switch_selected = state.versioning_mode == "native" and "left" or "right"
+  local switch_result = draw_switch("Native", "Auto", switch_selected, x + padding + 110, y + 24, switch_w, switch_h)
+  
+  if switch_result then
+    local config = require("config")
+    if switch_result == "left" then
+      state.versioning_mode = "native"
+      config.set("versioning_mode", "native")
+    else
+      state.versioning_mode = "auto"
+      config.set("versioning_mode", "auto")
+    end
+  end
+  
   -- Create new version button
   local has_project = state.project_name ~= "" and state.project_name ~= "No project loaded"
-  if draw_button("Create New Version", x + padding, y + 25, btn_w, btn_h, has_project) then
+  if draw_button("Create New Version", x + padding, y + 58, btn_w, btn_h, has_project) then
     gui.should_create_version = true
   end
   
@@ -232,17 +330,63 @@ local function draw_status_bar(x, y, w)
   return h
 end
 
--- Draw future features placeholder
-local function draw_future_section(x, y, w)
-  local h = 50
+-- Draw archiving section
+local function draw_archiving_section(x, y, w)
+  local h = 180
   local padding = 15
+  local btn_w = w - padding * 2
+  local btn_h = 36
+  local small_btn_w = 100
   
   -- Section divider
   set_color(colors.border)
   gfx.line(x + 10, y, x + w - 10, y)
   
-  -- Coming soon text
-  draw_text("Archiving features coming in v0.2+", x + padding, y + 15, colors.text_dim, state.font_small)
+  -- Section title
+  draw_text("Archiving", x + padding, y + 10, colors.text_dim, state.font_small)
+  
+  -- Versions to keep
+  draw_text("Versions to keep active:", x + padding, y + 35, colors.text, state.font_small)
+  
+  -- Input field for versions to keep (compact)
+  local input_x = x + padding + 160
+  local input_w = 50
+  if draw_input_field(state.versions_to_keep, input_x, y + 30, input_w, 24) then
+    -- Show input dialog
+    local retval, new_value = reaper.GetUserInputs("Versions to Keep", 1, "Number of versions to keep active:", tostring(state.versions_to_keep))
+    if retval then
+      local num = tonumber(new_value)
+      if num and num >= 1 then
+        state.versions_to_keep = math.floor(num)
+        local config = require("config")
+        config.set("versions_to_keep", state.versions_to_keep)
+      end
+    end
+  end
+  
+  -- Archive destination
+  draw_text("Archive destination:", x + padding, y + 65, colors.text, state.font_small)
+  
+  -- Display current destination (truncated)
+  local dest_display = state.archive_destination
+  if dest_display == "" then
+    dest_display = "Not set"
+  elseif #dest_display > 30 then
+    dest_display = "..." .. dest_display:sub(-27)
+  end
+  draw_text(dest_display, x + padding, y + 82, colors.text_dim, state.font_small)
+  
+  -- Browse button
+  if draw_button("Browse...", x + padding, y + 100, small_btn_w, 28) then
+    gui.should_browse_archive_dest = true
+  end
+  
+  -- Archive now button
+  local has_project = state.project_name ~= "" and state.project_name ~= "No project loaded"
+  local has_dest = state.archive_destination ~= ""
+  if draw_button("Archive Now", x + padding, y + 138, btn_w, btn_h, has_project and has_dest) then
+    gui.should_archive_now = true
+  end
   
   return h
 end
@@ -305,7 +449,7 @@ function gui.update()
   y_offset = y_offset + draw_header(0, y_offset, w)
   y_offset = y_offset + draw_project_info(0, y_offset, w)
   y_offset = y_offset + draw_versioning_section(0, y_offset, w)
-  y_offset = y_offset + draw_future_section(0, y_offset, w)
+  y_offset = y_offset + draw_archiving_section(0, y_offset, w)
   
   -- Status bar at bottom
   draw_status_bar(0, h - 25, w)

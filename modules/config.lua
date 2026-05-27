@@ -18,12 +18,17 @@ local defaults = {
   version_digits = 3,
   -- Starting version number for new projects
   start_version = 1,
+  -- Versioning mode: "native" (Reaper Save As dialog) or "auto" (full automated copy)
+  versioning_mode = "auto",
+  -- Archiving settings
+  archive_destination = "",
+  versions_to_keep = 3,
   -- Window state defaults
   window_dock = 0,
   window_x = 100,
   window_y = 100,
   window_width = 350,
-  window_height = 250,
+  window_height = 400,
 }
 
 -- Current configuration (loaded from ExtState or defaults)
